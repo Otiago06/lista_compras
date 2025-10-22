@@ -82,7 +82,7 @@
             <!-- AQUI ESTÁ A ALTERAÇÃO: ADIÇÃO DISCRETA DA VERSÃO -->
             <p class="text-sm text-gray-500 mt-1">
                 Controle de Gastos em Tempo Real 
-                <span class="text-xs text-gray-400 ml-1">(v1.0.0)</span>
+                <span class="text-xs text-gray-400 ml-1">(v1.0.1)</span>
             </p>
         </header>
 
@@ -346,6 +346,9 @@
             scanFeedback.textContent = 'Aponte a câmera para o código de barras...';
 
             Quagga.init({
+                // OTIMIZAÇÃO: Adiciona workers para processamento paralelo e frequência de processamento
+                workers: 4, 
+                frequency: 10,
                 inputStream: {
                     name: "Live",
                     type: "LiveStream",
@@ -357,11 +360,13 @@
                         facingMode: "environment" 
                     },
                 },
+                // OTIMIZAÇÃO: Configurações explícitas do localizador para melhor detecção
+                locator: { 
+                    patchSize: 'medium', 
+                    halfSample: true 
+                },
                 decoder: {
                     readers: ["ean_reader", "ean_8_reader", "upc_reader", "upc_e_reader"],
-                    // OTIMIZAÇÃO: Ajuste fino para melhorar a detecção em foco não ideal
-                    patchSize: 'medium',
-                    halfSample: true,
                 },
                 locate: true // Garante que o Quagga tente localizar o código
             }, function (err) {
