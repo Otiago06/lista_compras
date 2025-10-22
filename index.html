@@ -82,7 +82,7 @@
             <!-- AQUI ESTÁ A ALTERAÇÃO: ADIÇÃO DISCRETA DA VERSÃO -->
             <p class="text-sm text-gray-500 mt-1">
                 Controle de Gastos em Tempo Real 
-                <span class="text-xs text-gray-400 ml-1">(v1.0.1)</span>
+                <span class="text-xs text-gray-400 ml-1">(v1.0.8)</span>
             </p>
         </header>
 
@@ -185,11 +185,13 @@
                     <div class="flex space-x-3">
                         <div class="flex-1">
                             <label class="block text-sm font-medium text-gray-700">Quantidade</label>
-                            <input type="number" id="quantity-input" min="1" value="1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" required />
+                            <!-- Placeholder 1 para sugerir a quantidade mais comum -->
+                            <input type="number" id="quantity-input" min="1" placeholder="1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" required />
                         </div>
                         <div class="flex-1">
                             <label class="block text-sm font-medium text-gray-700">Valor Unitário (R$)</label>
-                            <input type="number" id="price-input" step="0.01" min="0.01" placeholder="0.00" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" required />
+                            <!-- Placeholder 0,00 para sugestão, campo limpo para digitação -->
+                            <input type="text" inputmode="decimal" id="price-input" placeholder="0,00" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" required />
                         </div>
                     </div>
                     
@@ -475,12 +477,15 @@
             stepScan.classList.add('hidden');
             stepDetails.classList.remove('hidden');
 
+            // LIMPAR AMBOS OS CAMPOS de valor e quantidade para usar PLACEHOLDERS
+            priceInput.value = ''; 
+            quantityInput.value = ''; 
+
+
             if (errorType === 'offline') {
                 // Se estiver offline
                 modalTitle.textContent = 'Modo Offline';
                 productNameInput.value = value;
-                priceInput.value = '';
-                quantityInput.value = '1';
                 priceInput.focus();
                 showToast("Você está OFFLINE. Produto não consultado. Informe os detalhes manualmente.");
                 return; 
@@ -490,8 +495,6 @@
                 // Produto Encontrado Online
                 modalTitle.textContent = 'Produto Encontrado!';
                 productNameInput.value = product.name;
-                priceInput.value = product.unitPrice.toFixed(2); 
-                quantityInput.value = '1';
                 saveItemBtn.textContent = 'Adicionar à Lista';
                 priceInput.focus();
                 showToast(`Produto encontrado: ${product.name}. Por favor, insira o preço.`);
@@ -507,8 +510,6 @@
 
                 modalTitle.textContent = 'Produto Novo';
                 productNameInput.value = value;
-                priceInput.value = '';
-                quantityInput.value = '1';
                 priceInput.focus();
             }
         }
@@ -584,11 +585,11 @@
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
                 
-                // Resetar inputs
+                // Resetar inputs para vazio, usando placeholder
                 barcodeInput.value = '';
                 productNameInput.value = '';
-                quantityInput.value = '1';
-                priceInput.value = '';
+                quantityInput.value = ''; 
+                priceInput.value = ''; 
                 itemIdHidden.value = '';
 
                 // Voltar ao passo de Scan
@@ -607,7 +608,8 @@
                 itemIdHidden.value = item.id;
                 productNameInput.value = item.name;
                 quantityInput.value = item.quantity;
-                priceInput.value = item.unitPrice;
+                // Ao editar, DEVE preencher o campo com o valor existente
+                priceInput.value = item.unitPrice.toFixed(2).replace('.', ',');
                 saveItemBtn.textContent = 'Atualizar Item';
                 
                 stepScan.classList.add('hidden');
@@ -616,6 +618,10 @@
                 modalTitle.textContent = 'Adicionar Novo Item';
                 saveItemBtn.textContent = 'Adicionar à Lista';
 
+                // Certifica-se de que os inputs estejam vazios ao abrir novo item
+                quantityInput.value = '';
+                priceInput.value = '';
+                
                 // Começa no passo de Scan
                 stepScan.classList.remove('hidden');
                 stepDetails.classList.add('hidden');
@@ -758,14 +764,37 @@
         
         saveItemBtn.addEventListener('click', () => {
             const name = productNameInput.value.trim();
-            const quantity = parseInt(quantityInput.value);
-            const unitPrice = parseFloat(priceInput.value.replace(',', '.')); 
+            
+            // LÓGICA DE QUANTIDADE: Assume 1 se o campo estiver vazio, caso contrário, tenta parsear
+            let quantityValue = quantityInput.value.trim();
+            // AQUI: Se o campo for vazio, a quantidade é 1. Caso contrário, tenta converter.
+            let quantity = quantityValue ? parseInt(quantityValue) : 1; 
+
+            // Converte o valor de entrada (com vírgula) para um float (com ponto)
+            const priceRaw = priceInput.value.trim();
+            const unitPrice = parseFloat(priceRaw.replace(',', '.')); 
             const existingId = itemIdHidden.value;
             
-            if (!name || isNaN(quantity) || quantity <= 0 || isNaN(unitPrice) || unitPrice <= 0) {
-                showToast("Por favor, preencha todos os campos corretamente.");
+            // --- VALIDAÇÃO APRIMORADA ---
+            if (!name) {
+                showToast("O campo Nome/Descrição é obrigatório.");
+                productNameInput.focus();
                 return;
             }
+            
+            if (isNaN(unitPrice) || unitPrice <= 0) {
+                showToast("O Valor Unitário deve ser um número positivo (use vírgula).");
+                priceInput.focus();
+                return;
+            }
+
+            // Garante que mesmo que o usuário tente digitar '0' ou '-1', o app impeça
+            if (quantity <= 0) {
+                showToast("A Quantidade deve ser um número positivo (se vazio, é 1).");
+                quantityInput.focus();
+                return;
+            }
+            // -----------------------------
 
             const itemData = {
                 id: existingId || generateId(),
