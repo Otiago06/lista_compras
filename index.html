@@ -16,7 +16,8 @@
         /* Configuração de Fonte Padrão e Estilos Globais */
         :root {
             --primary: #4f46e5;
-            --secondary: #10b981;
+            /* Cor Secundária (verde) agora é referenciada diretamente no Tailwind, mas mantemos a variável por consistência: */
+            --secondary: #10b981; 
             --background: #f8f8fb;
             --card: #ffffff;
         }
@@ -180,8 +181,8 @@
                         <!-- O stream de vídeo será injetado aqui pelo Quagga -->
                     </div>
                     
-                    <!-- Botão de Iniciar/Parar Leitor (Agora sempre visível) -->
-                    <button id="start-scan-btn" class="w-full bg-secondary hover:bg-green-600 text-white font-bold py-3 rounded-lg transition duration-150 shadow-md flex items-center justify-center">
+                    <!-- Botão de Iniciar/Parar Leitor (Corrigido para usar bg-green-600) -->
+                    <button id="start-scan-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition duration-150 shadow-md flex items-center justify-center">
                         <i data-lucide="camera" class="w-5 h-5 inline-block mr-2" id="scan-icon"></i>
                         <span id="scan-text">Iniciar Leitor de Código de Barras</span>
                     </button>
@@ -249,7 +250,7 @@
         </div>
     </div>
     
-    <!-- NOVO: MODAL para CONFIRMAÇÃO de Limpeza de Dados -->
+    <!-- MODAL para CONFIRMAÇÃO de Limpeza de Dados -->
     <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm hidden items-center justify-center p-4 z-[60] transition-opacity duration-300">
         <div class="bg-white rounded-2xl w-full max-w-xs shadow-2xl transform transition-transform duration-300 scale-95 opacity-0" id="confirmation-modal-content">
             <div class="p-6 text-center">
@@ -426,9 +427,9 @@
         function startScanner() {
             if (isScannerRunning) return;
 
-            // 1. Atualiza o botão para o estado "Parar"
+            // 1. Atualiza o botão para o estado "Parar" (USANDO CLASSES DIRETAS DO TAILWIND)
             startScanBtn.classList.add('bg-red-500', 'hover:bg-red-600');
-            startScanBtn.classList.remove('bg-secondary', 'hover:bg-green-600');
+            startScanBtn.classList.remove('bg-green-600', 'hover:bg-green-700'); 
             scanText.textContent = 'Parar Leitor';
             scanIcon.setAttribute('data-lucide', 'square');
             lucide.createIcons();
@@ -503,9 +504,9 @@
                 Quagga.stop();
                 isScannerRunning = false;
                 
-                // 1. Atualiza o botão para o estado "Iniciar"
+                // 1. Atualiza o botão para o estado "Iniciar" (USANDO CLASSES DIRETAS DO TAILWIND)
                 startScanBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
-                startScanBtn.classList.add('bg-secondary', 'hover:bg-green-600');
+                startScanBtn.classList.add('bg-green-600', 'hover:bg-green-700');
                 scanText.textContent = 'Iniciar Leitor de Código de Barras';
                 scanIcon.setAttribute('data-lucide', 'camera');
                 lucide.createIcons();
