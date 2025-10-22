@@ -66,6 +66,14 @@
             top: 0;
             left: 0;
         }
+        
+        /* Classe para o dropdown */
+        .dropdown-menu-visible {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            transform: translateY(0) !important;
+        }
+
     </style>
 </head>
 <body class="antialiased">
@@ -79,10 +87,9 @@
                 <i data-lucide="shopping-cart" class="w-6 h-6 mr-2 text-indigo-600"></i>
                 Minha Compra
             </h1>
-            <!-- AQUI ESTÁ A ALTERAÇÃO: ADIÇÃO DISCRETA DA VERSÃO -->
             <p class="text-sm text-gray-500 mt-1">
                 Controle de Gastos em Tempo Real 
-                <span class="text-xs text-gray-400 ml-1">(v1.0.8)</span>
+                <span class="text-xs text-gray-400 ml-1">(v1.0.9)</span>
             </p>
         </header>
 
@@ -111,22 +118,54 @@
             </div>
         </main>
 
-        <!-- Footer e Botões de Ação -->
-        <footer class="p-4 bg-white border-t border-gray-200 sticky bottom-0 z-10 flex space-x-2">
-            <!-- Botão Adicionar Item (Principal) -->
-            <button id="add-item-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition duration-150 transform hover:scale-[1.01] flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
-                <i data-lucide="plus-circle" class="w-5 h-5 mr-2"></i>
-                Adicionar Item
-            </button>
-            <!-- Botão Exportar (Secundário) -->
-            <button id="export-list-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 rounded-xl shadow-md transition duration-150 flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-gray-400 focus:ring-opacity-50">
-                <i data-lucide="download" class="w-5 h-5"></i>
-            </button>
+        <!-- Footer e Botões de Ação (COM NOVO ITEM DE MENU) -->
+        <footer class="p-4 bg-white border-t border-gray-200 sticky bottom-0 z-10">
+            <div class="flex space-x-2">
+                <!-- Botão Adicionar Item (Principal) -->
+                <button id="add-item-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition duration-150 transform hover:scale-[1.01] flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
+                    <i data-lucide="plus-circle" class="w-5 h-5 mr-2"></i>
+                    Adicionar Item
+                </button>
+                
+                <!-- Dropdown de Ações (MENU) -->
+                <div class="relative">
+                    <!-- Botão que abre o Dropdown -->
+                    <button id="menu-toggle-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 rounded-xl shadow-md transition duration-150 flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-gray-400 focus:ring-opacity-50">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                    
+                    <!-- Menu Suspenso -->
+                    <div id="action-menu" class="absolute bottom-full right-0 mb-2 w-64 bg-white rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5 opacity-0 pointer-events-none transition duration-150 transform translate-y-2 origin-bottom-right">
+                        <div class="py-1">
+                            <!-- Opção 1: Exportar CSV -->
+                            <button id="export-csv-btn" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                                <i data-lucide="file-text" class="w-4 h-4 mr-2 text-indigo-500"></i>
+                                Exportar para CSV
+                            </button>
+                            <!-- Opção 2: Comparador de Preços (Link Externo) -->
+                            <a href="https://otiago06.github.io/comparador_precos_ph/" target="_blank" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center border-t border-gray-100">
+                                <i data-lucide="line-chart" class="w-4 h-4 mr-2 text-green-500"></i>
+                                Comparador de preços PH
+                            </a>
+                            <!-- Opção 3: Limpar Todos os Dados (NOVO) -->
+                            <button id="clear-data-btn" class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center border-t border-gray-100">
+                                <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i>
+                                Limpar Todos os Dados
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Crédito no Rodapé -->
+            <p class="text-xs text-center text-gray-400 mt-3">
+                Desenvolvido por Tiago Oliveira
+            </p>
         </footer>
 
     </div>
 
-    <!-- MODAL para Adicionar/Editar Item -->
+    <!-- MODAL para Adicionar/Editar Item (Inalterado) -->
     <div id="item-modal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden items-center justify-center p-4 z-50 transition-opacity duration-300">
         <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl transform transition-transform duration-300 scale-95 opacity-0" id="item-modal-content">
             
@@ -227,7 +266,14 @@
         const totalDisplay = document.getElementById('grand-total-display');
         const authStatus = document.getElementById('auth-status');
         const addItemBtn = document.getElementById('add-item-btn');
-        const exportBtn = document.getElementById('export-list-btn');
+        
+        // NOVOS ELEMENTOS DO MENU
+        const menuToggleBtn = document.getElementById('menu-toggle-btn');
+        const actionMenu = document.getElementById('action-menu');
+        const exportCsvBtn = document.getElementById('export-csv-btn');
+        // NOVO: Botão de limpar dados
+        const clearDataBtn = document.getElementById('clear-data-btn');
+
         const modal = document.getElementById('item-modal');
         const modalContent = document.getElementById('item-modal-content');
         const modalTitle = document.getElementById('modal-title');
@@ -235,8 +281,8 @@
         const stepDetails = document.getElementById('step-details');
         const barcodeInput = document.getElementById('barcode-input');
         const startScanBtn = document.getElementById('start-scan-btn'); 
-        const scanIcon = document.getElementById('scan-icon'); // Referência para o ícone
-        const scanText = document.getElementById('scan-text'); // Referência para o texto
+        const scanIcon = document.getElementById('scan-icon'); 
+        const scanText = document.getElementById('scan-text'); 
         const submitBarcodeBtn = document.getElementById('submit-barcode-btn'); 
         const interactiveContainer = document.getElementById('interactive-container');
         const scanFeedback = document.getElementById('scan-feedback');
@@ -253,6 +299,8 @@
 
         // Estado do Scanner
         let isScannerRunning = false;
+        // Estado de Confirmação para Limpeza de Dados
+        let clearConfirmTimeout = null;
 
 
         // --- FUNÇÕES DE UTILIDADE ---
@@ -279,6 +327,21 @@
             }, 3000);
         }
 
+        /** * Alterna a visibilidade do menu de ações (dropdown).
+         * @param {boolean} [show] Força o estado (true para mostrar, false para esconder).
+         */
+        function toggleMenu(show) {
+            const isVisible = actionMenu.classList.contains('dropdown-menu-visible');
+
+            if (show === false || isVisible) {
+                // Esconder
+                actionMenu.classList.remove('dropdown-menu-visible');
+            } else {
+                // Mostrar
+                actionMenu.classList.add('dropdown-menu-visible');
+            }
+        }
+        
         /** Gera um ID de documento único. */
         function generateId() {
             return 'item-' + Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
@@ -538,6 +601,22 @@
             }
         }
 
+        /**
+         * NOVO: Limpa todos os dados do localStorage da aplicação.
+         */
+        function clearAllDataConfirmed() {
+            // Garante que o timeout de confirmação seja cancelado
+            if (clearConfirmTimeout) {
+                clearTimeout(clearConfirmTimeout);
+                clearConfirmTimeout = null;
+            }
+
+            localStorage.removeItem(LOCAL_STORAGE_KEY);
+            renderList([]);
+            showToast("⚠️ Todos os dados da lista foram excluídos!");
+            toggleMenu(false);
+        }
+
         function exportList(listItems) {
             if (!listItems || listItems.length === 0) {
                 showToast("A lista está vazia para exportar.");
@@ -739,9 +818,44 @@
         addItemBtn.addEventListener('click', () => openModal());
         closeModalBtn.addEventListener('click', () => closeModal());
         
-        exportBtn.addEventListener('click', () => {
+        // Listener para o botão de toggle do menu
+        menuToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); 
+            toggleMenu();
+        });
+
+        // Listener para fechar o menu ao clicar em qualquer lugar fora dele
+        document.addEventListener('click', (e) => {
+            if (actionMenu.classList.contains('dropdown-menu-visible')) {
+                // Se o clique não foi no botão de toggle NEM no próprio menu
+                if (!menuToggleBtn.contains(e.target) && !actionMenu.contains(e.target)) {
+                    toggleMenu(false);
+                }
+            }
+        });
+
+        // Listener para Exportar para CSV (nova ID no menu)
+        exportCsvBtn.addEventListener('click', () => {
             const listItems = loadListFromLocal();
             exportList(listItems);
+            toggleMenu(false); // Fecha o menu após a ação
+        });
+        
+        // NOVO: Listener para Limpar Dados (Confirmação de 2 cliques)
+        clearDataBtn.addEventListener('click', () => {
+            // Se já estiver esperando a confirmação, limpa os dados
+            if (clearConfirmTimeout) {
+                clearAllDataConfirmed();
+            } else {
+                // Caso contrário, inicia o processo de confirmação
+                showToast("⚠️ CLIQUE NOVAMENTE para EXCLUIR TODOS OS DADOS!");
+                
+                // Define um timeout de 5 segundos para a confirmação
+                clearConfirmTimeout = setTimeout(() => {
+                    clearConfirmTimeout = null;
+                    showToast("Confirmação de exclusão expirada.");
+                }, 5000);
+            }
         });
 
         // Botão de Scan agora alterna entre iniciar e parar
