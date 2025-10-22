@@ -1,0 +1,161 @@
+<!DOCTYPE html><html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista de Compras</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+  <header class="bg-white shadow p-4 flex justify-between items-center">
+    <h1 class="text-lg font-semibold flex items-center gap-2"><i data-lucide="shopping-bag"></i> Lista de Compras</h1>
+    <button id="exportarCSV" class="flex items-center gap-1 text-sm text-gray-600 hover:text-black"><i data-lucide="download"></i> Exportar</button>
+  </header>  <main class="flex-1 p-4 space-y-4">
+    <section id="scannerSection" class="bg-white p-4 rounded-2xl shadow-md">
+      <h2 class="text-base font-medium mb-2 flex items-center gap-2"><i data-lucide="scan-line"></i> Escanear Produto</h2>
+      <video id="video" class="w-full rounded-lg bg-gray-100"></video>
+      <div class="flex gap-2 mt-2">
+        <button id="iniciarCamera" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-medium">Iniciar Câmera</button>
+        <button id="pararCamera" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 rounded-lg font-medium">Parar</button>
+      </div>
+      <div class="mt-3">
+        <input id="codigoManual" type="text" placeholder="Ou digite o código EAN" class="w-full border border-gray-300 rounded-lg p-2">
+        <button id="buscarManual" class="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium">Buscar Produto</button>
+      </div>
+    </section><section id="produtoInfo" class="hidden bg-white p-4 rounded-2xl shadow-md">
+  <h2 class="text-base font-medium mb-2 flex items-center gap-2"><i data-lucide="package"></i> Informações do Produto</h2>
+  <div class="space-y-2">
+    <input id="nomeProduto" type="text" placeholder="Nome do produto" class="w-full border border-gray-300 rounded-lg p-2">
+    <input id="precoProduto" type="number" placeholder="Preço (R$)" step="0.01" class="w-full border border-gray-300 rounded-lg p-2">
+    <input id="quantidadeProduto" type="number" placeholder="Quantidade" min="1" value="1" class="w-full border border-gray-300 rounded-lg p-2">
+    <button id="adicionarProduto" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-medium">Adicionar à Lista</button>
+  </div>
+</section>
+
+<section id="listaCompras" class="bg-white p-4 rounded-2xl shadow-md">
+  <h2 class="text-base font-medium mb-2 flex items-center gap-2"><i data-lucide="list"></i> Itens da Lista</h2>
+  <ul id="itensLista" class="divide-y divide-gray-200"></ul>
+  <div class="flex justify-between mt-3 font-semibold text-lg">
+    <span>Total:</span>
+    <span id="totalCompra">R$ 0,00</span>
+  </div>
+</section>
+
+  </main>  <footer class="text-center text-sm text-gray-500 py-3">
+    <p>Protótipo — Tiago Oliveira © 2025</p>
+  </footer>  <script>
+    lucide.createIcons();
+
+    const video = document.getElementById('video');
+    const iniciarCamera = document.getElementById('iniciarCamera');
+    const pararCamera = document.getElementById('pararCamera');
+    const codigoManual = document.getElementById('codigoManual');
+    const buscarManual = document.getElementById('buscarManual');
+    const produtoInfo = document.getElementById('produtoInfo');
+    const nomeProduto = document.getElementById('nomeProduto');
+    const precoProduto = document.getElementById('precoProduto');
+    const quantidadeProduto = document.getElementById('quantidadeProduto');
+    const adicionarProduto = document.getElementById('adicionarProduto');
+    const itensLista = document.getElementById('itensLista');
+    const totalCompra = document.getElementById('totalCompra');
+    const exportarCSV = document.getElementById('exportarCSV');
+
+    let lista = JSON.parse(localStorage.getItem('listaCompras')) || [];
+    let stream = null;
+
+    function atualizarLista() {
+      itensLista.innerHTML = '';
+      let total = 0;
+      lista.forEach((item, i) => {
+        const li = document.createElement('li');
+        li.className = 'flex justify-between items-center py-2';
+        li.innerHTML = `
+          <div>
+            <p class='font-medium'>${item.nome}</p>
+            <p class='text-sm text-gray-500'>R$ ${item.preco.toFixed(2)} x ${item.qtd}</p>
+          </div>
+          <div class='flex items-center gap-2'>
+            <span class='font-semibold'>R$ ${(item.preco * item.qtd).toFixed(2)}</span>
+            <button onclick='removerItem(${i})' class='text-red-500'><i data-lucide="trash-2"></i></button>
+          </div>`;
+        itensLista.appendChild(li);
+        total += item.preco * item.qtd;
+      });
+      totalCompra.textContent = `R$ ${total.toFixed(2)}`;
+      localStorage.setItem('listaCompras', JSON.stringify(lista));
+      lucide.createIcons();
+    }
+
+    function removerItem(i) {
+      lista.splice(i, 1);
+      atualizarLista();
+    }
+
+    adicionarProduto.addEventListener('click', () => {
+      if (!nomeProduto.value || !precoProduto.value) return;
+      lista.push({
+        nome: nomeProduto.value,
+        preco: parseFloat(precoProduto.value),
+        qtd: parseInt(quantidadeProduto.value) || 1
+      });
+      produtoInfo.classList.add('hidden');
+      nomeProduto.value = precoProduto.value = '';
+      atualizarLista();
+    });
+
+    exportarCSV.addEventListener('click', () => {
+      let csv = 'Produto,Preço,Quantidade,Subtotal\n';
+      lista.forEach(i => csv += `${i.nome},${i.preco},${i.qtd},${(i.preco*i.qtd).toFixed(2)}\n`);
+      const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+      saveAs(blob, 'lista_compras.csv');
+    });
+
+    async function buscarProdutoPorEAN(ean) {
+      try {
+        const resp = await fetch(`https://world.openfoodfacts.org/api/v0/product/${ean}.json`);
+        const data = await resp.json();
+        if (data.status === 1) {
+          nomeProduto.value = data.product.product_name || 'Produto não identificado';
+        } else {
+          nomeProduto.value = '';
+        }
+        produtoInfo.classList.remove('hidden');
+      } catch {
+        nomeProduto.value = '';
+        produtoInfo.classList.remove('hidden');
+      }
+    }
+
+    buscarManual.addEventListener('click', () => {
+      const ean = codigoManual.value.trim();
+      if (ean) buscarProdutoPorEAN(ean);
+    });
+
+    iniciarCamera.addEventListener('click', async () => {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      video.srcObject = stream;
+      video.setAttribute('playsinline', true);
+      await video.play();
+
+      const codeReader = new ZXing.BrowserBarcodeReader();
+      codeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
+        if (result) {
+          buscarProdutoPorEAN(result.text);
+          codeReader.reset();
+          pararCamera.click();
+        }
+      });
+    });
+
+    pararCamera.addEventListener('click', () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+      }
+    });
+
+    atualizarLista();
+  </script></body>
+</html>
